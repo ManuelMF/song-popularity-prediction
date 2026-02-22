@@ -43,3 +43,6 @@ The Stacking implementation proved effective, reducing the **RMSE error from 17.
 * **Nature of the problem**: Results indicate that the relationship between audio and popularity is preeminently **non-linear**. Pure linear models were outperformed by approaches capable of capturing complex patterns, like Random Forest.
 * **Overfitting and Generalization**: The model showing the highest variance was the Decision Tree, with a clear tendency to memorize data. Stacking mitigated this effect, becoming the model with the best generalization capacity on the test set.
 * **Limitations and Realism**: Predicting a song's success based solely on audio is a limited challenge. Critical external factors such as label influence, marketing investment, artist fame, or social media virality are not present in this dataset, establishing a natural "ceiling" for the model's accuracy.
+
+
+<img width="1492" height="217" alt="image" src="https://github.com/user-attachments/assets/dcc8af70-a0a2-48e0-b7a0-eea09b367085" />
