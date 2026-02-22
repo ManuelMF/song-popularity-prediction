@@ -1,75 +1,45 @@
-# 🎵 Predicción de Popularidad Musical: Optimización Coarse-to-Fine y Stacking Regressor
+# Predicción de Popularidad Musical: Optimización Coarse-to-Fine y Stacking de Modelos
 
-Este repositorio contiene el proyecto final de Aprendizaje Supervisado, donde se aborda el reto de predecir la popularidad de canciones utilizando sus características técnicas de audio. El proyecto destaca por el uso de **Pipelines robustos**, una estrategia de optimización jerárquica y el ensamblaje de modelos mediante **Stacking**.
+Este proyecto documenta el desarrollo de un sistema de regresión diseñado para predecir la popularidad de canciones basándose en sus atributos técnicos de audio. El flujo de trabajo abarca desde el análisis exploratorio hasta la implementación de un Stacking Regressor, demostrando un control exhaustivo sobre el sobreajuste y la optimización de hiperparámetros.
 
----
+## Metodología y Estrategia de Optimización
 
-## 📊 Descripción del Proyecto
+El núcleo técnico de este trabajo se basa en dos pilares:
 
-El objetivo es determinar la variable `popularity` (0-100) basándose en atributos como *danceability*, *energy*, *loudness*, entre otros. Se trabaja con el **Song Popularity Dataset** de Kaggle.
+1. **Pipelines y prevención de fuga de datos**: Se ha utilizado la clase `Pipeline` de scikit-learn para encapsular el escalado de datos (`MinMaxScaler`) y el entrenamiento. Esto garantiza que no exista *data leakage* y que el preprocesamiento se valide de forma independiente en cada split de la validación cruzada.
+2. **Optimización Coarse-to-Fine**: En lugar de realizar búsquedas aleatorias, se ha implementado una estrategia jerárquica para los parámetros en escala logarítmica (como Alpha, Gamma o C). Primero se exploraron órdenes de magnitud amplios para identificar la región de interés y, posteriormente, se realizaron búsquedas densas para encontrar el valor óptimo.
 
-### Puntos Clave del Desarrollo:
-* **Anti-Leakage:** Uso estricto de `Pipeline` para garantizar que el escalado de datos se realice únicamente dentro de la validación cruzada.
-* **Optimización Jerárquica:** Implementación de búsqueda **Coarse-to-Fine** para hiperparámetros en escala logarítmica.
-* **Ensemble Learning:** Combinación de diversos modelos (Lineales, KNN, Árboles, SVM) mediante un **StackingRegressor**.
 
----
 
-## 🛠️ Metodología y Fases
+## Modelos Evaluados
 
-### 1. Análisis y Preprocesamiento
-* Análisis de correlación y limpieza de características no relevantes.
-* Escalado de variables numéricas con `MinMaxScaler` y gestión de nulos.
-* División de datos en `train` y `test` con semilla fija para reproducibilidad.
+Se han entrenado y ajustado mediante `GridSearchCV` los siguientes algoritmos:
 
-### 2. Optimización Coarse-to-Fine
-Para evitar búsquedas exhaustivas ineficientes, se aplicó un proceso de sintonización en tres niveles:
-1. **Fase Coarse:** Exploración de órdenes de magnitud ($10^{-6}$ a $10^{6}$) para localizar la región de menor error.
-2. **Fase Refinada:** Búsqueda con mayor densidad dentro del intervalo óptimo detectado.
-3. **Ajuste Fino:** Sintonización lineal alrededor del mejor valor absoluto.
+* Regresión Lineal y Kernel Ridge.
+* K-Neighbors Regressor (KNN).
+* Árboles de Decisión y Random Forest.
+* Support Vector Regression (SVR).
 
-### 3. Modelos Implementados
-Se optimizaron y compararon los siguientes algoritmos mediante `GridSearchCV`:
-* **Regresión Lineal & Kernel Ridge**
-* **K-Neighbors Regressor**
-* **Decision Tree & Random Forest Regressor**
-* **SVR (Support Vector Regression)**
+## Análisis del Modelo de Stacking
 
-### 4. Meta-Modelo (Stacking)
-Se construyó un **StackingRegressor** utilizando los mejores modelos individuales como *base learners* y una **Regresión Lineal** como *meta-modelo*. Este enfoque permite que el algoritmo final aprenda a ponderar las predicciones de cada modelo según su fiabilidad relativa.
+Para obtener la máxima capacidad predictiva, se implementó un `StackingRegressor` utilizando los modelos anteriores como *base-learners* y una Regresión Lineal como meta-modelo. El análisis de los coeficientes del meta-modelo arroja las siguientes conclusiones:
 
----
+### Jerarquía de importancia
+El meta-modelo confía principalmente en un tándem de dos enfoques: el **Random Forest (peso: 0.63)** y el **K-Neighbors (peso: 0.49)**. Juntos dominan la toma de decisiones, combinando reglas de decisión lógica con similitud por distancia.
 
-## 📈 Resultados
-El modelo final se evaluó utilizando:
-* **MAE** (Mean Absolute Error)
-* **RMSE** (Root Mean Squared Error)
+### Modelos descartados por redundancia
+El Árbol de Decisión individual recibió un peso casi nulo (**-0.001**). Esto confirma que, al estar el Random Forest presente (que ya es una agrupación de árboles), un árbol solitario no aporta información incremental. El SVR también fue ignorado significativamente (**-0.06**).
 
-| Modelo | MAE (Test) | RMSE (Test) |
-| :--- | :---: | :---: |
-| Linear Regression | - | - |
-| Random Forest | - | - |
-| **Stacking Regressor** | **Mejor** | **Mejor** |
+### El papel de los coeficientes negativos
+El Kernel Ridge presenta un coeficiente de **-0.20**. En un ensamble de este tipo, los valores negativos actúan como mecanismos de corrección: si el resto de modelos tienden a sobreestimar la popularidad, el meta-modelo utiliza este valor para compensar y ajustar el resultado final.
 
-*(Nota: Rellenar con tus resultados finales)*
+### Mejora en la precisión
+La implementación del Stacking ha demostrado ser efectiva, reduciendo el error **RMSE de 17.23** (mejor modelo individual) a **16.88**, lo que confirma que la combinación de perspectivas mejora la generalización.
 
----
 
-## 🎯 Conclusiones e Interpretación
-* **Complementariedad:** El meta-modelo de Stacking reveló una mayor confianza en modelos de tipo [Mencionar tu modelo ganador], logrando una generalización superior a cualquier modelo individual.
-* **Linealidad:** Se observó que el problema presenta componentes [lineales/no lineales] significativos, lo que justifica el uso de kernels complejos.
-* **Limitaciones:** La popularidad es un fenómeno multivariable; las características de audio proporcionan una base sólida, pero factores externos (marketing, tendencias) actúan como ruido en el dataset.
 
----
+## Análisis Crítico y Conclusiones
 
-## 🚀 Próximos Pasos (Roadmap)
-Este proyecto forma parte de un itinerario de especialización en Machine Learning Aplicado:
-- [x] Regresión Avanzada y Ensembles (Este proyecto).
-- [ ] Predicción de Series Temporales (Time Series Analysis).
-- [ ] **Desarrollo de Bot de Trading Algorítmico:** Aplicación de arquitecturas de Stacking y optimización para la predicción de activos financieros en tiempo real.
-
----
-
-## 📦 Requisitos
-```bash
-pip install numpy pandas scikit-learn matplotlib seaborn
+* **Naturaleza del problema**: Los resultados indican que la relación entre el audio y la popularidad es eminentemente **no lineal**. Los modelos lineales puros se vieron superados por enfoques capaces de capturar patrones complejos, como Random Forest.
+* **Sobreajuste y Generalización**: El modelo que mostró mayor varianza fue el Árbol de Decisión, con una clara tendencia a memorizar los datos. El Stacking ha logrado mitigar este efecto, convirtiéndose en el modelo con mejor capacidad de generalización en el conjunto de test.
+* **Limitaciones y realismo**: Es importante destacar que predecir el éxito de una canción basándose solo en el audio es un desafío limitado. Factores externos críticos como el peso de la discográfica, la inversión en marketing, la fama previa del artista o la viralidad en plataformas sociales no están presentes en este dataset, lo que establece un "techo" natural para la precisión del modelo.
