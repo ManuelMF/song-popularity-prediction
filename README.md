@@ -1,45 +1,45 @@
-# Predicción de Popularidad Musical: Optimización Coarse-to-Fine y Stacking de Modelos
+# Music Popularity Prediction: Coarse-to-Fine Optimization & Stacking Regressor
 
-Este proyecto documenta el desarrollo de un sistema de regresión diseñado para predecir la popularidad de canciones basándose en sus atributos técnicos de audio. El flujo de trabajo abarca desde el análisis exploratorio hasta la implementación de un Stacking Regressor, demostrando un control exhaustivo sobre el sobreajuste y la optimización de hiperparámetros.
+This project documents the development of a regression system designed to predict song popularity based on technical audio attributes. The workflow covers everything from exploratory data analysis to the implementation of a Stacking Regressor, demonstrating thorough control over overfitting and hyperparameter optimization.
 
-## Metodología y Estrategia de Optimización
+## Methodology and Optimization Strategy
 
-El núcleo técnico de este trabajo se basa en dos pilares:
+The technical core of this work is built on two pillars:
 
-1. **Pipelines y prevención de fuga de datos**: Se ha utilizado la clase `Pipeline` de scikit-learn para encapsular el escalado de datos (`MinMaxScaler`) y el entrenamiento. Esto garantiza que no exista *data leakage* y que el preprocesamiento se valide de forma independiente en cada split de la validación cruzada.
-2. **Optimización Coarse-to-Fine**: En lugar de realizar búsquedas aleatorias, se ha implementado una estrategia jerárquica para los parámetros en escala logarítmica (como Alpha, Gamma o C). Primero se exploraron órdenes de magnitud amplios para identificar la región de interés y, posteriormente, se realizaron búsquedas densas para encontrar el valor óptimo.
+1. **Pipelines and Data Leakage Prevention**: I used scikit-learn's `Pipeline` class to encapsulate data scaling (`MinMaxScaler`) and training. This ensures that no data leakage occurs and that preprocessing is independently validated in each cross-validation split.
+2. **Coarse-to-Fine Optimization**: Instead of relying on simple random searches, I implemented a hierarchical strategy for logarithmic scale parameters (such as Alpha, Gamma, or C). I first explored broad orders of magnitude to identify the region of interest and subsequently conducted dense searches to find the optimal value.
 
 
 
-## Modelos Evaluados
+## Evaluated Models
 
-Se han entrenado y ajustado mediante `GridSearchCV` los siguientes algoritmos:
+The following algorithms were trained and tuned using `GridSearchCV`:
 
-* Regresión Lineal y Kernel Ridge.
+* Linear Regression and Kernel Ridge.
 * K-Neighbors Regressor (KNN).
-* Árboles de Decisión y Random Forest.
+* Decision Trees and Random Forest.
 * Support Vector Regression (SVR).
 
-## Análisis del Modelo de Stacking
+## Stacking Model Analysis
 
-Para obtener la máxima capacidad predictiva, se implementó un `StackingRegressor` utilizando los modelos anteriores como *base-learners* y una Regresión Lineal como meta-modelo. El análisis de los coeficientes del meta-modelo arroja las siguientes conclusiones:
+To achieve maximum predictive power, I implemented a `StackingRegressor` using the previous models as base-learners and a Linear Regression as the meta-model. The analysis of the meta-model coefficients yields the following insights:
 
-### Jerarquía de importancia
-El meta-modelo confía principalmente en un tándem de dos enfoques: el **Random Forest (peso: 0.63)** y el **K-Neighbors (peso: 0.49)**. Juntos dominan la toma de decisiones, combinando reglas de decisión lógica con similitud por distancia.
+### Importance Hierarchy
+The meta-model primarily trusts a tandem of two approaches: **Random Forest (weight: 0.63)** and **K-Neighbors (weight: 0.49)**. Together they dominate the decision-making process, combining logical decision rules with distance-based similarity.
 
-### Modelos descartados por redundancia
-El Árbol de Decisión individual recibió un peso casi nulo (**-0.001**). Esto confirma que, al estar el Random Forest presente (que ya es una agrupación de árboles), un árbol solitario no aporta información incremental. El SVR también fue ignorado significativamente (**-0.06**).
+### Models Discarded due to Redundancy
+The individual Decision Tree received a near-zero weight (**-0.001**). This confirms that with Random Forest present—which is already an ensemble of trees—a solitary tree provides no incremental information. SVR was also significantly ignored (**-0.06**).
 
-### El papel de los coeficientes negativos
-El Kernel Ridge presenta un coeficiente de **-0.20**. En un ensamble de este tipo, los valores negativos actúan como mecanismos de corrección: si el resto de modelos tienden a sobreestimar la popularidad, el meta-modelo utiliza este valor para compensar y ajustar el resultado final.
+### The Role of Negative Coefficients
+Kernel Ridge presents a coefficient of **-0.20**. In such an ensemble, negative values act as correction mechanisms: if other models tend to overestimate popularity, the meta-model uses this value to offset and balance the final result.
 
-### Mejora en la precisión
-La implementación del Stacking ha demostrado ser efectiva, reduciendo el error **RMSE de 17.23** (mejor modelo individual) a **16.88**, lo que confirma que la combinación de perspectivas mejora la generalización.
+### Accuracy Improvement
+The Stacking implementation proved effective, reducing the **RMSE error from 17.23** (best individual model) to **16.88**, confirming that combining perspectives improves generalization.
 
 
 
-## Análisis Crítico y Conclusiones
+## Critical Analysis and Conclusions
 
-* **Naturaleza del problema**: Los resultados indican que la relación entre el audio y la popularidad es eminentemente **no lineal**. Los modelos lineales puros se vieron superados por enfoques capaces de capturar patrones complejos, como Random Forest.
-* **Sobreajuste y Generalización**: El modelo que mostró mayor varianza fue el Árbol de Decisión, con una clara tendencia a memorizar los datos. El Stacking ha logrado mitigar este efecto, convirtiéndose en el modelo con mejor capacidad de generalización en el conjunto de test.
-* **Limitaciones y realismo**: Es importante destacar que predecir el éxito de una canción basándose solo en el audio es un desafío limitado. Factores externos críticos como el peso de la discográfica, la inversión en marketing, la fama previa del artista o la viralidad en plataformas sociales no están presentes en este dataset, lo que establece un "techo" natural para la precisión del modelo.
+* **Nature of the problem**: Results indicate that the relationship between audio and popularity is preeminently **non-linear**. Pure linear models were outperformed by approaches capable of capturing complex patterns, like Random Forest.
+* **Overfitting and Generalization**: The model showing the highest variance was the Decision Tree, with a clear tendency to memorize data. Stacking mitigated this effect, becoming the model with the best generalization capacity on the test set.
+* **Limitations and Realism**: Predicting a song's success based solely on audio is a limited challenge. Critical external factors such as label influence, marketing investment, artist fame, or social media virality are not present in this dataset, establishing a natural "ceiling" for the model's accuracy.
